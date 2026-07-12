@@ -1,0 +1,93 @@
+import { SignJWT, jwtVerify } from 'jose';
+import crypto from 'crypto';
+import { getOptionalEnv, getRequiredEnv, getSameSiteEnv, isProduction } from '#src/utils/env.ts';
+
+// Separate secrets for each token type
+const ACCESS_SECRET = new TextEncoder().encode(getRequiredEnv('JWT_SECRET'));
+const REFRESH_SECRET = new TextEncoder().encode(
+  getRequiredEnv('REFRESH_JWT_SECRET')
+);
+
+const ACCESS_EXPIRES_IN = getOptionalEnv('JWT_EXPIRES_IN', '5m');
+const REFRESH_EXPIRES_IN = getOptionalEnv('REFRESH_JWT_EXPIRES_IN', '15d');
+
+export const generateTokens = async (userId: string, sessionId: string) => {
+  const [accessToken, refreshToken] = await Promise.all([
+    generateAccessToken(userId, sessionId),
+    generateRefreshToken(userId),
+  ]);
+  return { accessToken, refreshToken };
+};
+
+export const generateAccessToken = (userId: string, sessionId: string) => {
+  return new SignJWT({ userId, sessionId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(ACCESS_EXPIRES_IN)
+    .sign(ACCESS_SECRET);
+};
+
+export const verifyAccessToken = async (token: string) => {
+  try {
+    const { payload } = (await jwtVerify(token, ACCESS_SECRET)) as {
+      payload: { userId: string; sessionId: string };
+    };
+    return { userId: payload.userId, sessionId: payload.sessionId };
+  } catch (error) {
+    return null;
+  }
+};
+
+export const generateRefreshToken = (userId: string) => {
+  return new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(REFRESH_EXPIRES_IN)
+    .sign(REFRESH_SECRET);
+};
+
+export const verifyRefreshToken = async (token: string) => {
+  try {
+    const { payload } = (await jwtVerify(token, REFRESH_SECRET)) as {
+      payload: { userId: string } | undefined;
+    };
+    return payload?.userId || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const clearTokens = (res: any) => {
+  res.clearCookie('refreshToken');
+  res.clearCookie('accessToken');
+};
+
+// DONE: Save tokens in cookies with secure and httpOnly flags
+export const saveToCookie = async (
+  res: any,
+  refreshToken: string,
+  accessToken: string
+) => {
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    // use lowercase `expires` and also provide `maxAge` for robustness
+    expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days
+    maxAge: 15 * 24 * 60 * 60 * 1000,
+    secure: isProduction(),
+    sameSite: getSameSiteEnv('COOKIE_SAME_SITE', 'strict'),
+  });
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: isProduction(),
+    sameSite: getSameSiteEnv('COOKIE_SAME_SITE', 'strict'),
+    // short-lived access token cookie — set a reasonable expiry (matches JWT short expiry)
+    expires: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+    maxAge: 5 * 60 * 1000,
+  });
+};
+
+export function hashTokenCrypto(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+export const createRandomToken = () => crypto.randomBytes(32).toString('hex');
