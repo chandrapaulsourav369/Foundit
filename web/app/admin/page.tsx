@@ -1,20 +1,44 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowDownRight, ArrowUpRight, Users, FileText, Flag } from "lucide-react";
+import { Users, FileText, Flag, CheckCircle2 } from "lucide-react";
 import { getSession } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
 import StatusBadge from "@/components/StatusBadge";
 import {
-	mockAdminPosts,
-	mockAdminStats,
-	mockAdminUsers,
-	mockReports,
-} from "@/lib/mock-data";
+	adminListPostsAction,
+	adminListReportsAction,
+	adminListUsersAction,
+	adminStatsAction,
+} from "@/lib/admin/actions";
+import { getPostAction } from "@/lib/posts/actions";
 
 export default async function AdminDashboardPage() {
 	const session = await getSession();
 	if (session?.user.role !== "ADMIN") redirect("/");
+
+	const [postsResult, usersResult, reportsResult, statsResult] = await Promise.all([
+		adminListPostsAction(),
+		adminListUsersAction(),
+		adminListReportsAction(),
+		adminStatsAction(),
+	]);
+
+	const stats = statsResult.data?.stats;
+	const statCards = [
+		{ label: "Total Users", value: stats?.totalUsers ?? 0, icon: Users },
+		{ label: "Total Posts", value: stats?.totalPosts ?? 0, icon: FileText },
+		{ label: "Resolved", value: stats?.resolvedPosts ?? 0, icon: CheckCircle2 },
+		{ label: "Open Reports", value: stats?.openReports ?? 0, icon: Flag },
+	];
+
+	const recentPosts = (postsResult.data?.posts ?? []).slice(0, 3);
+	const recentUsers = (usersResult.data?.users ?? []).slice(0, 3);
+	const recentReports = (reportsResult.data?.reports ?? []).slice(0, 3);
+
+	const recentReportPosts = await Promise.all(
+		recentReports.map(r => getPostAction(r.postId)),
+	);
 
 	return (
 		<main className='mx-auto max-w-6xl px-4 py-8'>
@@ -34,22 +58,12 @@ export default async function AdminDashboardPage() {
 			</div>
 
 			<div className='mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-				{mockAdminStats.map(stat => (
+				{statCards.map(stat => (
 					<div key={stat.label} className='rounded-lg border p-5'>
-						<p className='text-sm text-muted-foreground'>{stat.label}</p>
-						<p className='mt-2 text-3xl font-semibold'>{stat.value}</p>
-						<p
-							className={`mt-1 flex items-center gap-1 text-xs font-medium ${
-								stat.trend === "up" ? "text-secondary-foreground" : "text-destructive"
-							}`}
-						>
-							{stat.trend === "up" ? (
-								<ArrowUpRight className='size-3.5' />
-							) : (
-								<ArrowDownRight className='size-3.5' />
-							)}
-							{stat.change} this month
+						<p className='flex items-center gap-1.5 text-sm text-muted-foreground'>
+							<stat.icon className='size-3.5' /> {stat.label}
 						</p>
+						<p className='mt-2 text-3xl font-semibold'>{stat.value}</p>
 					</div>
 				))}
 			</div>
@@ -60,12 +74,17 @@ export default async function AdminDashboardPage() {
 						<Flag className='size-4' /> Recent reports
 					</h2>
 					<div className='mt-3 space-y-3'>
-						{mockReports.slice(0, 3).map(report => (
-							<div key={report.id} className='flex items-center justify-between gap-2 text-sm'>
-								<span className='truncate'>{report.post.title}</span>
-								<StatusBadge status={report.status} />
-							</div>
-						))}
+						{recentReports.map((report, i) => {
+							const post = recentReportPosts[i];
+							return (
+								<div key={report.id} className='flex items-center justify-between gap-2 text-sm'>
+									<span className='truncate'>
+										{post?.success && post.data ? post.data.post.title : "Listing"}
+									</span>
+									<StatusBadge status={report.status} />
+								</div>
+							);
+						})}
 					</div>
 				</div>
 
@@ -74,7 +93,7 @@ export default async function AdminDashboardPage() {
 						<Users className='size-4' /> Recent users
 					</h2>
 					<div className='mt-3 space-y-3'>
-						{mockAdminUsers.slice(0, 3).map(user => (
+						{recentUsers.map(user => (
 							<div key={user.id} className='flex items-center gap-3 text-sm'>
 								<UserAvatar
 									name={user.name}
@@ -92,7 +111,7 @@ export default async function AdminDashboardPage() {
 						<FileText className='size-4' /> Recent posts
 					</h2>
 					<div className='mt-3 space-y-3'>
-						{mockAdminPosts.slice(0, 3).map(post => (
+						{recentPosts.map(post => (
 							<div key={post.id} className='flex items-center justify-between gap-2 text-sm'>
 								<span className='truncate'>{post.title}</span>
 								<StatusBadge status={post.status} />

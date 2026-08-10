@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = new Set(["/", "/style-discovery"]);
+const PUBLIC_ROUTES = new Set(["/", "/feed", "/style-discovery"]);
 
 const isAssetRequest = (pathname: string) => /\.[^/]+$/.test(pathname);
 
@@ -28,6 +28,7 @@ export function proxy(request: NextRequest) {
 		const redirectUrl = request.nextUrl.clone();
 		redirectUrl.pathname = "/";
 		redirectUrl.search = "";
+		redirectUrl.searchParams.set("authRequired", "1");
 		return NextResponse.redirect(redirectUrl);
 	}
 

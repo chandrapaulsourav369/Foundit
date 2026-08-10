@@ -11,7 +11,7 @@ const Footer = () => {
             <h2 className="font-serif text-xl font-bold text-foreground italic">FoundIt</h2>
           </div>
           <div className="flex gap-8 text-muted-foreground text-sm">
-            <Link className="hover:text-primary transition-colors" href="/">Feed</Link>
+            <Link className="hover:text-primary transition-colors" href="/feed">Feed</Link>
             <Link className="hover:text-primary transition-colors" href="/posts/create">create post</Link>
             <Link className="hover:text-primary transition-colors" href="/reports">My reports</Link>
           </div>

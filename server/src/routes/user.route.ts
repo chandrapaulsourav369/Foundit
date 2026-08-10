@@ -3,6 +3,8 @@ import {
   deleteAccount,
   forgotPassword,
   getProfile,
+  getPublicProfileHandler,
+  listUserPostsHandler,
   resendVerificationEmail,
   resetPassword,
   updateUserProfileData,
@@ -17,6 +19,8 @@ router.post('/reset-password', resetPassword);
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification-email', resendVerificationEmail);
+router.get('/:id/profile', getPublicProfileHandler);
+router.get('/:id/listings', listUserPostsHandler);
 router.use(authMiddleware);
 router.get('/admin/check', requireRole('ADMIN'), (req, res) => {
   res.status(200).json({ success: true, data: { allowed: true } });

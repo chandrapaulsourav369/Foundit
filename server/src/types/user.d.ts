@@ -15,6 +15,7 @@ export type ReturnUserDto = {
   avatar?: string;
   avatarUrl?: string;
   userBodyImageUrl?: string;
+  bio?: string;
   age?: number;
   gender?: string;
   location?: string;
@@ -28,6 +29,7 @@ export type UpdateUserProfileDto = {
   name?: string;
   avatarUrl?: string;
   userBodyImageUrl?: string;
+  bio?: string;
   age?: number;
   gender?: string;
   location?: string;

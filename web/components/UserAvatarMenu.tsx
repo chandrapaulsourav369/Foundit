@@ -14,7 +14,10 @@ import {
 import { cn } from "@/lib/utils";
 import type { Session } from "@/types/auth";
 
-const USER_LINKS = [{ href: "/user/dashboard", label: "Dashboard" }];
+const USER_LINKS = [
+	{ href: "/user/dashboard", label: "Dashboard" },
+	{ href: "/reports", label: "My Reports" },
+];
 
 type UserAvatarMenuProps = {
 	user: Session["user"];
@@ -60,7 +63,7 @@ export function UserAvatarMenu({ user, signOutAction }: UserAvatarMenuProps) {
 						</span>
 					</span>
 					{/* <span className='hidden max-w-32 flex-col text-left md:flex'>
-						<span className='truncate text-sm font-semibold text-white'>
+						<span className='truncate text-sm font-semibold text-foreground'>
 							{user.name}
 						</span>
 						<span className='truncate text-xs text-slate-300'>

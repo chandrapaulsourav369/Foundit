@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -14,18 +14,48 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import { mockReports } from "@/lib/mock-data";
-import { Report, ReportStatus } from "@/types/social";
+import { adminListReportsAction, adminUpdateReportAction } from "@/lib/admin/actions";
+import { getPostAction } from "@/lib/posts/actions";
+import { Post } from "@/types/post";
+import { Report, REPORT_REASONS, ReportStatus } from "@/types/social";
 
 export default function ReportsModeration() {
-	const [reports, setReports] = useState<Report[]>(mockReports);
-	const [selectedId, setSelectedId] = useState(mockReports[0]?.id ?? "");
+	const [reports, setReports] = useState<Report[]>([]);
+	const [postsById, setPostsById] = useState<Record<string, Post>>({});
+	const [selectedId, setSelectedId] = useState("");
 	const [note, setNote] = useState("");
 
-	const selected = reports.find(r => r.id === selectedId);
+	useEffect(() => {
+		adminListReportsAction().then(async result => {
+			if (!result.success || !result.data) return;
+			setReports(result.data.reports);
+			setSelectedId(result.data.reports[0]?.id ?? "");
 
-	function updateStatus(status: ReportStatus) {
+			const uniquePostIds = [...new Set(result.data.reports.map(r => r.postId))];
+			const postResults = await Promise.all(
+				uniquePostIds.map(id => getPostAction(id)),
+			);
+			const map: Record<string, Post> = {};
+			postResults.forEach((r, i) => {
+				if (r.success && r.data) map[uniquePostIds[i]] = r.data.post;
+			});
+			setPostsById(map);
+		});
+	}, []);
+
+	const selected = reports.find(r => r.id === selectedId);
+	const selectedPost = selected ? postsById[selected.postId] : undefined;
+
+	async function updateStatus(status: ReportStatus) {
 		if (!selected) return;
+		const result = await adminUpdateReportAction(selected.id, {
+			status,
+			adminResponse: note || undefined,
+		});
+		if (!result.success) {
+			toast.error(result.message || "Failed to update report");
+			return;
+		}
 		setReports(prev =>
 			prev.map(r =>
 				r.id === selected.id
@@ -53,12 +83,13 @@ export default function ReportsModeration() {
 					>
 						<div className='flex items-center justify-between gap-2'>
 							<span className='truncate text-sm font-medium'>
-								{report.post.title}
+								{postsById[report.postId]?.title ?? "Listing"}
 							</span>
 							<StatusBadge status={report.status} />
 						</div>
 						<p className='mt-1 truncate text-xs text-muted-foreground'>
-							{report.reason}
+							{REPORT_REASONS.find(r => r.value === report.reason)?.label ??
+								report.reason}
 						</p>
 					</button>
 				))}
@@ -67,10 +98,13 @@ export default function ReportsModeration() {
 			{selected && (
 				<div className='space-y-5 rounded-lg border p-6'>
 					<div>
-						<h2 className='text-lg font-semibold'>{selected.reason}</h2>
+						<h2 className='text-lg font-semibold'>
+							{REPORT_REASONS.find(r => r.value === selected.reason)?.label ??
+								selected.reason}
+						</h2>
 						<p className='mt-1 text-sm text-muted-foreground'>
 							Submitted{" "}
-							{new Date(selected.submittedAt).toLocaleDateString(undefined, {
+							{new Date(selected.createdAt).toLocaleDateString(undefined, {
 								month: "short",
 								day: "numeric",
 								year: "numeric",
@@ -83,13 +117,17 @@ export default function ReportsModeration() {
 							Reported content
 						</p>
 						<Link
-							href={`/posts/${selected.post.id}`}
+							href={`/posts/${selected.postId}`}
 							className='mt-1 block text-sm font-semibold hover:underline'
 						>
-							{selected.post.title}
+							{selectedPost?.title ?? "Listing"}
 						</Link>
-						<StatusBadge status={selected.post.status} className='mt-2' />
-						<p className='mt-3 text-sm'>{selected.details}</p>
+						{selectedPost && (
+							<StatusBadge status={selectedPost.status} className='mt-2' />
+						)}
+						{selected.details && (
+							<p className='mt-3 text-sm'>{selected.details}</p>
+						)}
 					</div>
 
 					<div className='space-y-2'>

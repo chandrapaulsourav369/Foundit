@@ -5,7 +5,7 @@ const VARIANTS = {
 	FOUND: "bg-primary/10 text-primary",
 	RESOLVED: "bg-secondary text-secondary-foreground",
 	PENDING: "bg-muted text-muted-foreground",
-	REVIEWING: "bg-accent/20 text-accent-foreground",
+	REVIEWING: "bg-accent/10 text-accent",
 	REJECTED: "bg-destructive/10 text-destructive",
 	ACTIVE: "bg-secondary text-secondary-foreground",
 	BANNED: "bg-destructive/10 text-destructive",

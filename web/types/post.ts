@@ -20,6 +20,13 @@ export type PostImage = {
 	order: number;
 };
 
+export type PostAuthor = {
+	id: string;
+	name: string;
+	avatarUrl: string | null;
+	location: string | null;
+};
+
 export type Post = {
 	id: string;
 	title: string;
@@ -32,6 +39,10 @@ export type Post = {
 	itemDate: string;
 	images: PostImage[];
 	authorId: string;
+	author?: PostAuthor | null;
+	likeCount: number;
+	likedByMe: boolean;
+	commentCount: number;
 	createdAt: string;
 	updatedAt: string;
 };

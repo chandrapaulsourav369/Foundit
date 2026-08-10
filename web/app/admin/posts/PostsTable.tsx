@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
@@ -28,13 +28,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatusBadge from "@/components/StatusBadge";
-import { mockAdminPosts } from "@/lib/mock-data";
+import {
+	adminListPostsAction,
+	adminRemovePostAction,
+	adminRestorePostAction,
+} from "@/lib/admin/actions";
 import { AdminPostRow } from "@/types/social";
 
 export default function PostsTable() {
-	const [posts, setPosts] = useState<AdminPostRow[]>(mockAdminPosts);
+	const [posts, setPosts] = useState<AdminPostRow[]>([]);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("ALL");
+
+	useEffect(() => {
+		adminListPostsAction().then(result => {
+			if (result.success && result.data) {
+				setPosts(result.data.posts);
+			}
+		});
+	}, []);
 
 	const filtered = useMemo(
 		() =>
@@ -49,9 +61,26 @@ export default function PostsTable() {
 		[posts, search, statusFilter],
 	);
 
-	function removePost(id: string) {
-		setPosts(prev => prev.filter(p => p.id !== id));
+	async function removePost(id: string) {
+		const result = await adminRemovePostAction(id);
+		if (!result.success) {
+			toast.error(result.message || "Failed to remove post");
+			return;
+		}
+		setPosts(prev =>
+			prev.map(p => (p.id === id ? { ...p, deletedAt: new Date().toISOString() } : p)),
+		);
 		toast.success("Post removed");
+	}
+
+	async function restorePost(id: string) {
+		const result = await adminRestorePostAction(id);
+		if (!result.success) {
+			toast.error(result.message || "Failed to restore post");
+			return;
+		}
+		setPosts(prev => prev.map(p => (p.id === id ? { ...p, deletedAt: null } : p)));
+		toast.success("Post restored");
 	}
 
 	return (
@@ -91,7 +120,14 @@ export default function PostsTable() {
 					<TableBody>
 						{filtered.map(post => (
 							<TableRow key={post.id}>
-								<TableCell className='font-medium'>{post.title}</TableCell>
+								<TableCell className='font-medium'>
+									{post.title}
+									{post.deletedAt && (
+										<span className='ml-2 text-xs text-destructive'>
+											(deleted)
+										</span>
+									)}
+								</TableCell>
 								<TableCell className='text-muted-foreground'>
 									{post.authorName}
 								</TableCell>
@@ -114,12 +150,18 @@ export default function PostsTable() {
 											<DropdownMenuItem asChild>
 												<Link href={`/posts/${post.id}`}>View</Link>
 											</DropdownMenuItem>
-											<DropdownMenuItem
-												variant='destructive'
-												onClick={() => removePost(post.id)}
-											>
-												Remove
-											</DropdownMenuItem>
+											{post.deletedAt ? (
+												<DropdownMenuItem onClick={() => restorePost(post.id)}>
+													Restore
+												</DropdownMenuItem>
+											) : (
+												<DropdownMenuItem
+													variant='destructive'
+													onClick={() => removePost(post.id)}
+												>
+													Remove
+												</DropdownMenuItem>
+											)}
 										</DropdownMenuContent>
 									</DropdownMenu>
 								</TableCell>

@@ -22,15 +22,18 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { REPORT_REASONS } from "@/lib/mock-data";
+import { createReportAction } from "@/lib/reports/actions";
+import { REPORT_REASONS, ReportReason } from "@/types/social";
 
 export default function ReportDialog({
+	postId,
 	targetLabel = "this post",
 }: {
+	postId: string;
 	targetLabel?: string;
 }) {
 	const [open, setOpen] = useState(false);
-	const [reason, setReason] = useState<string>("");
+	const [reason, setReason] = useState<ReportReason | "">("");
 	const [details, setDetails] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
@@ -40,8 +43,14 @@ export default function ReportDialog({
 			return;
 		}
 		setSubmitting(true);
-		await new Promise(resolve => setTimeout(resolve, 500));
+		const result = await createReportAction(postId, reason, details || undefined);
 		setSubmitting(false);
+
+		if (!result.success) {
+			toast.error(result.message || "Failed to submit report");
+			return;
+		}
+
 		setOpen(false);
 		setReason("");
 		setDetails("");
@@ -67,14 +76,17 @@ export default function ReportDialog({
 				<div className='space-y-4'>
 					<div className='space-y-2'>
 						<label className='text-sm font-medium'>Reason</label>
-						<Select value={reason} onValueChange={setReason}>
+						<Select
+							value={reason}
+							onValueChange={v => setReason(v as ReportReason)}
+						>
 							<SelectTrigger className='w-full'>
 								<SelectValue placeholder='Select a reason' />
 							</SelectTrigger>
 							<SelectContent>
 								{REPORT_REASONS.map(r => (
-									<SelectItem key={r} value={r}>
-										{r}
+									<SelectItem key={r.value} value={r.value}>
+										{r.label}
 									</SelectItem>
 								))}
 							</SelectContent>

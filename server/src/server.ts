@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import app from './app.ts';
 import logger from './config/logger.ts';
 import { connectDB } from './config/database.ts';
@@ -35,6 +36,7 @@ const shutdown = async (signal: string) => {
 
   try {
     await closeServer();
+    await mongoose.connection.close();
     logger.info('API server shut down cleanly');
     process.exit(0);
   } catch (err) {

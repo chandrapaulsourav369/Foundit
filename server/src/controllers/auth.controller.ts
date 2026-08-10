@@ -133,14 +133,13 @@ export const signup = async (req: Request, res: Response) => {
       verificationToken,
     });
 
-    // TODO: Test
     sendVerificationEmail({
       to: newUser.email,
       userName: newUser.name,
       verificationLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`,
       expiryMinutes: 1440, // 24 hours
     }).catch(err =>
-      console.error('Verification email failed (non-fatal):', err)
+      console.error('Failed to send verification email (non-fatal):', err)
     );
 
     sendApiSuccess(res, {
@@ -316,7 +315,9 @@ export const googleAuthCallback = [
         to: user.email,
         userName: user.name,
         dashboardLink: `${frontend}`, //TODO: add dashboard link
-      });
+      }).catch(err =>
+        console.error('Failed to send welcome email (non-fatal):', err)
+      );
 
       return res.redirect(`${frontend}/api/auth/google/callback?${query}`);
     } catch (error) {

@@ -1,31 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotificationItem from "@/components/NotificationItem";
 import EmptyState from "@/components/EmptyState";
-import { mockNotifications } from "@/lib/mock-data";
+import {
+	listNotificationsAction,
+	markAllNotificationsReadAction,
+	markNotificationReadAction,
+} from "@/lib/notifications/actions";
 import { Notification } from "@/types/social";
 
 export default function NotificationsPage() {
-	const [notifications, setNotifications] =
-		useState<Notification[]>(mockNotifications);
+	const [notifications, setNotifications] = useState<Notification[]>([]);
 	const [filter, setFilter] = useState<"all" | "unread">("all");
 
+	useEffect(() => {
+		listNotificationsAction().then(result => {
+			if (result.success && result.data) {
+				setNotifications(result.data.notifications);
+			}
+		});
+	}, []);
+
 	const visible = notifications.filter(n =>
-		filter === "unread" ? !n.read : true,
+		filter === "unread" ? !n.isRead : true,
 	);
 
-	function markAllRead() {
-		setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+	async function markAllRead() {
+		setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+		await markAllNotificationsReadAction();
 	}
 
-	function markRead(id: string) {
+	async function markRead(id: string) {
 		setNotifications(prev =>
-			prev.map(n => (n.id === id ? { ...n, read: true } : n)),
+			prev.map(n => (n.id === id ? { ...n, isRead: true } : n)),
 		);
+		await markNotificationReadAction(id);
 	}
 
 	return (
@@ -46,9 +59,9 @@ export default function NotificationsPage() {
 					<TabsTrigger value='all'>All</TabsTrigger>
 					<TabsTrigger value='unread'>
 						Unread
-						{notifications.some(n => !n.read) && (
+						{notifications.some(n => !n.isRead) && (
 							<span className='ml-1.5 rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground'>
-								{notifications.filter(n => !n.read).length}
+								{notifications.filter(n => !n.isRead).length}
 							</span>
 						)}
 					</TabsTrigger>

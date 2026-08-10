@@ -5,6 +5,7 @@ export const updateProfileSchema = z
   .object({
     name: z.string().trim().min(1, 'Name cannot be empty').optional(),
     avatarUrl: z.string().url('Invalid avatar URL').trim().optional(),
+    bio: z.string().trim().max(280, 'Bio must be 280 characters or fewer').optional(),
     userBodyImageUrl: z
       .string()
       .url('Invalid user body image URL')

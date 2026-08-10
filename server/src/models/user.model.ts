@@ -15,6 +15,7 @@ export interface UserDocument {
   name: string;
   avatarUrl: string | null;
   userBodyImageUrl: string | null;
+  bio: string | null;
   age: number | null;
   ethnicity: string | null;
   gender: Gender;
@@ -41,6 +42,7 @@ const userSchema = new Schema<UserDocument>(
     name: { type: String, required: true },
     avatarUrl: { type: String, default: null },
     userBodyImageUrl: { type: String, default: null },
+    bio: { type: String, default: null },
     age: { type: Number, default: null },
     ethnicity: { type: String, default: null },
     gender: {

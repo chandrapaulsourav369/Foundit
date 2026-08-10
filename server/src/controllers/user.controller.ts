@@ -5,6 +5,8 @@ import {
   findUserById,
   findUserByPasswordResetTokenHash,
   findUserByVerificationToken,
+  getPublicProfile,
+  listUserPosts,
   updateUserPassword,
   updateUserProfile,
   verifyUserEmail,
@@ -30,6 +32,36 @@ import {
 } from '#src/validations/user.validation.ts';
 import { passwordValidation } from '#src/validations/auth.validation.ts';
 import { sendApiError, sendApiSuccess } from '#src/utils/api-response.ts';
+
+export const getPublicProfileHandler = async (req: Request, res: Response) => {
+  try {
+    const profile = await getPublicProfile(req.params.id as string);
+    if (!profile) {
+      return sendApiError(res, { status: 404, message: 'User not found' });
+    }
+    return sendApiSuccess(res, { data: { user: profile } });
+  } catch (error) {
+    return sendApiError(res, { status: 500, message: 'Failed to fetch profile' });
+  }
+};
+
+export const listUserPostsHandler = async (req: Request, res: Response) => {
+  try {
+    const cursor =
+      typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
+    const limit = req.query.limit
+      ? Math.min(50, Math.max(1, Number(req.query.limit) || 20))
+      : 20;
+
+    const result = await listUserPosts(req.params.id as string, {
+      cursor,
+      limit,
+    });
+    return sendApiSuccess(res, { data: result });
+  } catch (error) {
+    return sendApiError(res, { status: 500, message: 'Failed to fetch listings' });
+  }
+};
 
 export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
@@ -182,7 +214,6 @@ export const forgotPassword = async (req: Request, res: Response) => {
       to: user.email,
       userName: user.name,
       resetLink: `${process.env.FRONTEND_URL}/auth/reset-pass?token=${resetToken}`,
-      verificationLink: '',
       expiryMinutes: 60,
     });
 

@@ -7,7 +7,7 @@ export function AuthSocialButton({ href, label }: AuthSocialButtonProps) {
 	return (
 		<a
 			href={href}
-			className='inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#0d0d14] text-sm font-semibold text-white transition-colors hover:bg-white/5'
+			className='inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-input text-sm font-semibold text-foreground transition-colors hover:bg-accent/10'
 		>
 			<svg className='h-5 w-5' viewBox='0 0 24 24' aria-hidden='true'>
 				<path

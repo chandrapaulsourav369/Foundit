@@ -59,6 +59,10 @@ export type PublicPost = {
   itemDate: Date;
   images: PostImageDto[];
   authorId: string;
+  author?: { id: string; name: string; avatarUrl: string | null; location: string | null } | null;
+  likeCount: number;
+  likedByMe: boolean;
+  commentCount: number;
   createdAt: Date;
   updatedAt: Date;
 };

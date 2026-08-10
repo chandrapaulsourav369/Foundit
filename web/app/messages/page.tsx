@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, MessagesSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import UserAvatar from "@/components/UserAvatar";
 import EmptyState from "@/components/EmptyState";
-import { mockConversations } from "@/lib/mock-data";
+import { listConversationsAction } from "@/lib/messages/actions";
+import { Conversation } from "@/types/social";
 
 function timeAgo(iso: string) {
 	const diffMs = Date.now() - new Date(iso).getTime();
@@ -19,9 +20,20 @@ function timeAgo(iso: string) {
 
 export default function MessagesInboxPage() {
 	const [search, setSearch] = useState("");
+	const [conversations, setConversations] = useState<Conversation[]>([]);
+	const [loading, setLoading] = useState(true);
 
-	const conversations = mockConversations.filter(c =>
-		c.participant.name.toLowerCase().includes(search.toLowerCase()),
+	useEffect(() => {
+		listConversationsAction().then(result => {
+			if (result.success && result.data) {
+				setConversations(result.data.conversations);
+			}
+			setLoading(false);
+		});
+	}, []);
+
+	const visible = conversations.filter(c =>
+		(c.participant?.name ?? "").toLowerCase().includes(search.toLowerCase()),
 	);
 
 	return (
@@ -39,28 +51,28 @@ export default function MessagesInboxPage() {
 			</div>
 
 			<div className='mt-4 divide-y rounded-lg border'>
-				{conversations.map(conv => (
+				{visible.map(conv => (
 					<Link
 						key={conv.id}
 						href={`/messages/${conv.id}`}
 						className='flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent'
 					>
 						<UserAvatar
-							name={conv.participant.name}
-							avatarUrl={conv.participant.avatarUrl}
+							name={conv.participant?.name ?? "Unknown"}
+							avatarUrl={conv.participant?.avatarUrl ?? null}
 							className='size-11 shrink-0'
 						/>
 						<div className='min-w-0 flex-1'>
 							<div className='flex items-center justify-between gap-2'>
 								<p className='truncate text-sm font-semibold'>
-									{conv.participant.name}
+									{conv.participant?.name ?? "Unknown"}
 								</p>
 								<span className='shrink-0 text-xs text-muted-foreground'>
 									{timeAgo(conv.lastMessageAt)}
 								</span>
 							</div>
 							<p className='truncate text-sm text-muted-foreground'>
-								{conv.lastMessage}
+								{conv.lastMessage ?? "No messages yet"}
 							</p>
 						</div>
 						{conv.unreadCount > 0 && (
@@ -72,7 +84,7 @@ export default function MessagesInboxPage() {
 				))}
 			</div>
 
-			{conversations.length === 0 && (
+			{!loading && visible.length === 0 && (
 				<EmptyState
 					icon={MessagesSquare}
 					title='No conversations found'

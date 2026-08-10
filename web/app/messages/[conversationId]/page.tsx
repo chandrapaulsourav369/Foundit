@@ -2,14 +2,23 @@
 
 import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ArrowLeft, Send } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import UserAvatar from "@/components/UserAvatar";
 import MessageBubble from "@/components/MessageBubble";
-import { currentMockUser, getMockConversation } from "@/lib/mock-data";
-import { Message } from "@/types/social";
+import { useAuth } from "@/context/auth.context";
+import {
+	listConversationsAction,
+	listMessagesAction,
+	markConversationReadAction,
+	sendMessageAction,
+} from "@/lib/messages/actions";
+import { getPostAction } from "@/lib/posts/actions";
+import { Conversation, Message } from "@/types/social";
+
+const POLL_INTERVAL_MS = 5000;
 
 export default function ChatPage({
 	params,
@@ -17,50 +26,94 @@ export default function ChatPage({
 	params: Promise<{ conversationId: string }>;
 }) {
 	const { conversationId } = use(params);
-	const conversation = getMockConversation(conversationId);
-	if (!conversation) notFound();
-	const participant = conversation.participant;
+	const { user } = useAuth();
 
-	const [messages, setMessages] = useState<Message[]>(conversation.messages);
+	const [conversation, setConversation] = useState<Conversation | null>(null);
+	const [postTitle, setPostTitle] = useState("");
+	const [messages, setMessages] = useState<Message[]>([]);
 	const [draft, setDraft] = useState("");
-	const [isTyping, setIsTyping] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [notFound, setNotFound] = useState(false);
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ block: "end" });
-	}, [messages, isTyping]);
+		let cancelled = false;
 
-	function handleSend(e: React.FormEvent) {
+		async function load() {
+			const [convResult, messagesResult] = await Promise.all([
+				listConversationsAction(),
+				listMessagesAction(conversationId),
+			]);
+
+			if (cancelled) return;
+
+			const conv = convResult.data?.conversations.find(
+				c => c.id === conversationId,
+			);
+			if (!conv || !messagesResult.success || !messagesResult.data) {
+				setNotFound(true);
+				setLoading(false);
+				return;
+			}
+
+			setConversation(conv);
+			setMessages(messagesResult.data.messages);
+			setLoading(false);
+			void markConversationReadAction(conversationId);
+
+			const postResult = await getPostAction(conv.postId);
+			if (!cancelled && postResult.success && postResult.data) {
+				setPostTitle(postResult.data.post.title);
+			}
+		}
+
+		load();
+
+		const interval = setInterval(async () => {
+			const result = await listMessagesAction(conversationId);
+			if (!cancelled && result.success && result.data) {
+				setMessages(result.data.messages);
+			}
+		}, POLL_INTERVAL_MS);
+
+		return () => {
+			cancelled = true;
+			clearInterval(interval);
+		};
+	}, [conversationId]);
+
+	useEffect(() => {
+		bottomRef.current?.scrollIntoView({ block: "end" });
+	}, [messages]);
+
+	async function handleSend(e: React.FormEvent) {
 		e.preventDefault();
 		const trimmed = draft.trim();
 		if (!trimmed) return;
 
-		setMessages(prev => [
-			...prev,
-			{
-				id: `local-${Date.now()}`,
-				conversationId,
-				senderId: currentMockUser.id,
-				body: trimmed,
-				createdAt: new Date().toISOString(),
-			},
-		]);
 		setDraft("");
+		const result = await sendMessageAction(conversationId, trimmed);
+		if (!result.success || !result.data) {
+			toast.error(result.message || "Failed to send message");
+			return;
+		}
+		setMessages(prev => [...prev, result.data!.message]);
+	}
 
-		setIsTyping(true);
-		setTimeout(() => {
-			setIsTyping(false);
-			setMessages(prev => [
-				...prev,
-				{
-					id: `local-reply-${Date.now()}`,
-					conversationId,
-					senderId: participant.id,
-					body: "Got it, thanks!",
-					createdAt: new Date().toISOString(),
-				},
-			]);
-		}, 1600);
+	if (loading) {
+		return (
+			<main className='mx-auto max-w-2xl px-4 py-8 text-sm text-muted-foreground'>
+				Loading conversation...
+			</main>
+		);
+	}
+
+	if (notFound || !conversation) {
+		return (
+			<main className='mx-auto max-w-2xl px-4 py-8 text-sm text-muted-foreground'>
+				Conversation not found.
+			</main>
+		);
 	}
 
 	return (
@@ -70,15 +123,17 @@ export default function ChatPage({
 					<ArrowLeft className='size-5' />
 				</Link>
 				<UserAvatar
-					name={conversation.participant.name}
-					avatarUrl={conversation.participant.avatarUrl}
+					name={conversation.participant?.name ?? "Unknown"}
+					avatarUrl={conversation.participant?.avatarUrl ?? null}
 					className='size-9'
 				/>
 				<div>
-					<p className='text-sm font-semibold'>{conversation.participant.name}</p>
-					<p className='text-xs text-muted-foreground'>
-						Re: {conversation.postTitle}
+					<p className='text-sm font-semibold'>
+						{conversation.participant?.name ?? "Unknown"}
 					</p>
+					{postTitle && (
+						<p className='text-xs text-muted-foreground'>Re: {postTitle}</p>
+					)}
 				</div>
 			</div>
 
@@ -87,16 +142,9 @@ export default function ChatPage({
 					<MessageBubble
 						key={message.id}
 						message={message}
-						isOwn={message.senderId === currentMockUser.id}
+						isOwn={message.senderId === user?.id}
 					/>
 				))}
-				{isTyping && (
-					<div className='flex items-center gap-1 rounded-2xl rounded-bl-sm bg-muted px-4 py-3 w-fit'>
-						<span className='size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]' />
-						<span className='size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]' />
-						<span className='size-1.5 animate-bounce rounded-full bg-muted-foreground' />
-					</div>
-				)}
 				<div ref={bottomRef} />
 			</div>
 

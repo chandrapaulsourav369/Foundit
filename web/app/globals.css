@@ -6,38 +6,39 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--background: #121414;
-	--foreground: #e2e2e2;
-	--card: #1e2020;
-	--card-foreground: #e2e2e2;
-	--popover: #1a1c1c;
-	--popover-foreground: #e2e2e2;
-	--primary: #c9bfff;
-	--primary-foreground: #2e009c;
-	--secondary: #a6e6ff;
-	--secondary-foreground: #003543;
-	--muted: #333535;
-	--muted-foreground: #c9c4d8;
-	--accent: #14d1ff;
-	--accent-foreground: #00566b;
-	--destructive: #ffb4ab;
-	--destructive-foreground: #690005;
-	--border: #928ea1;
-	--input: #0d0d14;
-	--ring: #c9bfff;
-	--chart-1: #c9bfff;
-	--chart-2: #14d1ff;
-	--chart-3: #c7c5d0;
-	--chart-4: #918f9a;
-	--chart-5: #ec4899;
-	--sidebar: #121414;
-	--sidebar-foreground: #e2e2e2;
-	--sidebar-primary: #c9bfff;
-	--sidebar-primary-foreground: #2e009c;
-	--sidebar-accent: #1e2020;
-	--sidebar-accent-foreground: #c9bfff;
-	--sidebar-border: #333535;
-	--sidebar-ring: #c9bfff;
+	color-scheme: light;
+	--background: #f7f6fb;
+	--foreground: #1a1a1f;
+	--card: #ffffff;
+	--card-foreground: #1a1a1f;
+	--popover: #ffffff;
+	--popover-foreground: #1a1a1f;
+	--primary: #6d28d9;
+	--primary-foreground: #ffffff;
+	--secondary: #0891b2;
+	--secondary-foreground: #ffffff;
+	--muted: #eceaf2;
+	--muted-foreground: #5c5a66;
+	--accent: #0ea5e9;
+	--accent-foreground: #ffffff;
+	--destructive: #b3261e;
+	--destructive-foreground: #ffffff;
+	--border: #ddd9e6;
+	--input: #ffffff;
+	--ring: #6d28d9;
+	--chart-1: #6d28d9;
+	--chart-2: #0ea5e9;
+	--chart-3: #52505c;
+	--chart-4: #86828f;
+	--chart-5: #db2777;
+	--sidebar: #f7f6fb;
+	--sidebar-foreground: #1a1a1f;
+	--sidebar-primary: #6d28d9;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: #eceaf2;
+	--sidebar-accent-foreground: #6d28d9;
+	--sidebar-border: #ddd9e6;
+	--sidebar-ring: #6d28d9;
 	--font-sans: Manrope, Inter, system-ui, sans-serif;
 	--font-serif: Georgia, serif;
 	--font-mono: JetBrains Mono, monospace;
@@ -71,6 +72,7 @@
 }
 
 .dark {
+	color-scheme: dark;
 	--background: #121414;
 	--foreground: #e2e2e2;
 	--card: #1e2020;
@@ -191,7 +193,13 @@
 
 body {
 	min-height: 100vh;
-	background: var(--background);
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--primary) 8%, var(--background)) 0%,
+		var(--background) 45%,
+		color-mix(in srgb, var(--secondary) 8%, var(--background)) 100%
+	);
+	background-attachment: fixed;
 	color: var(--foreground);
 	letter-spacing: var(--tracking-normal);
 	transition: 300ms;
@@ -270,5 +278,25 @@ body {
 @layer components {
 	.linkIcons {
 		@apply text-primary-foreground/50;
+	}
+
+	.hero-gradient-text {
+		animation: hero-gradient-shift 6s ease-in-out infinite;
+	}
+}
+
+@keyframes hero-gradient-shift {
+	0%,
+	100% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hero-gradient-text {
+		animation: none;
 	}
 }

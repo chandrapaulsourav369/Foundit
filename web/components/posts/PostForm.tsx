@@ -97,7 +97,7 @@ export default function PostForm({ post }: { post?: Post }) {
 						{...register("category")}
 					>
 						{POST_CATEGORIES.map(category => (
-							<option key={category} value={category}>
+							<option key={category} value={category} className='text-neutral-900'>
 								{category.replace("_", " ")}
 							</option>
 						))}
@@ -112,7 +112,7 @@ export default function PostForm({ post }: { post?: Post }) {
 						{...register("status")}
 					>
 						{POST_STATUSES.map(status => (
-							<option key={status} value={status}>
+							<option key={status} value={status} className='text-neutral-900'>
 								{status}
 							</option>
 						))}

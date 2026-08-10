@@ -1,22 +1,15 @@
+import Link from "next/link";
 import { AtSign, MessageCircle, Shield, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { timeAgo } from "@/lib/timeAgo";
 import { Notification } from "@/types/social";
 
 const ICONS = {
-	comment: AtSign,
-	message: MessageCircle,
-	report: Flag,
-	admin: Shield,
+	NEW_COMMENT: AtSign,
+	NEW_MESSAGE: MessageCircle,
+	REPORT_UPDATE: Flag,
+	MODERATION: Shield,
 } as const;
-
-function timeAgo(iso: string) {
-	const diffMs = Date.now() - new Date(iso).getTime();
-	const minutes = Math.max(1, Math.round(diffMs / 60000));
-	if (minutes < 60) return `${minutes}m ago`;
-	const hours = Math.round(minutes / 60);
-	if (hours < 24) return `${hours}h ago`;
-	return `${Math.round(hours / 24)}d ago`;
-}
 
 export default function NotificationItem({
 	notification,
@@ -27,15 +20,8 @@ export default function NotificationItem({
 }) {
 	const Icon = ICONS[notification.type];
 
-	return (
-		<button
-			type='button'
-			onClick={onClick}
-			className={cn(
-				"flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors hover:bg-accent",
-				!notification.read && "bg-primary/5",
-			)}
-		>
+	const content = (
+		<>
 			<span className='mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary'>
 				<Icon className='size-4' />
 			</span>
@@ -48,9 +34,28 @@ export default function NotificationItem({
 					{timeAgo(notification.createdAt)}
 				</p>
 			</div>
-			{!notification.read && (
+			{!notification.isRead && (
 				<span className='mt-1.5 size-2 shrink-0 rounded-full bg-primary' />
 			)}
+		</>
+	);
+
+	const className = cn(
+		"flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors hover:bg-accent",
+		!notification.isRead && "bg-primary/5",
+	);
+
+	if (notification.link) {
+		return (
+			<Link href={notification.link} onClick={onClick} className={className}>
+				{content}
+			</Link>
+		);
+	}
+
+	return (
+		<button type='button' onClick={onClick} className={className}>
+			{content}
 		</button>
 	);
 }

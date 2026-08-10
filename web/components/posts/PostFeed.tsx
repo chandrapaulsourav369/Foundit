@@ -4,12 +4,29 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import PostCard from "./PostCard";
 import PostFilters, { PostFiltersValue } from "./PostFilters";
+import { Skeleton } from "@/components/ui/skeleton";
 import { listPostsAction } from "@/lib/posts/actions";
+
+function PostCardSkeleton() {
+	return (
+		<div className='rounded-lg bg-card p-4 shadow-sm'>
+			<div className='flex items-center gap-3'>
+				<Skeleton className='size-8 rounded-full' />
+				<div className='space-y-1.5'>
+					<Skeleton className='h-3.5 w-32' />
+					<Skeleton className='h-3 w-16' />
+				</div>
+			</div>
+			<Skeleton className='mt-4 h-80 w-full' />
+		</div>
+	);
+}
 
 const EMPTY_FILTERS: PostFiltersValue = {
 	search: "",
 	category: "",
 	status: "",
+	resolved: "",
 };
 
 export default function PostFeed() {
@@ -26,8 +43,14 @@ export default function PostFeed() {
 	}, [filters.search]);
 
 	const queryKey = useMemo(
-		() => ["posts", debouncedSearch, filters.category, filters.status],
-		[debouncedSearch, filters.category, filters.status],
+		() => [
+			"posts",
+			debouncedSearch,
+			filters.category,
+			filters.status,
+			filters.resolved,
+		],
+		[debouncedSearch, filters.category, filters.status, filters.resolved],
 	);
 
 	const {
@@ -46,6 +69,8 @@ export default function PostFeed() {
 					search: debouncedSearch || undefined,
 					category: filters.category || undefined,
 					status: filters.status || undefined,
+					resolved:
+						filters.resolved === "" ? undefined : filters.resolved === "true",
 				});
 				if (!result.success || !result.data) {
 					throw new Error(result.message || "Failed to load posts");
@@ -77,7 +102,10 @@ export default function PostFeed() {
 			<PostFilters value={filters} onChange={setFilters} />
 
 			{isLoading && (
-				<p className='text-sm text-muted-foreground'>Loading posts...</p>
+				<div className='space-y-4'>
+					<PostCardSkeleton />
+					<PostCardSkeleton />
+				</div>
 			)}
 
 			{!isLoading && isError && (
@@ -94,18 +122,14 @@ export default function PostFeed() {
 				</p>
 			)}
 
-			<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+			<div className='space-y-4'>
 				{posts.map(post => (
 					<PostCard key={post.id} post={post} />
 				))}
 			</div>
 
 			<div ref={loadMoreRef} />
-			{isFetchingNextPage && (
-				<p className='text-center text-sm text-muted-foreground'>
-					Loading more...
-				</p>
-			)}
+			{isFetchingNextPage && <PostCardSkeleton />}
 		</div>
 	);
 }

@@ -1,10 +1,14 @@
 "use server";
 import { Session } from "@/types/auth";
+import { ApiEnvelope } from "@/types/post";
+import { MyProfile } from "@/types/user";
 import { authFetch } from "./authFetch";
 import { getSession } from "./session";
 
-export const getProfile = async () => {
-	const response = await authFetch(`/api/user/profile`);
+export const getProfile = async (): Promise<
+	ApiEnvelope<{ user: MyProfile }>
+> => {
+	const response = await authFetch(`/api/user/me`);
 
 	const result = await response.json();
 	return result;

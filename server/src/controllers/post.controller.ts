@@ -31,7 +31,14 @@ export const createPostHandler = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const post = await createPost({ ...parsed.data, authorId: req.userId });
+    // ponytail: zod's coerce/default output narrows to all-optional through
+    // safeParse + spread (known zod/TS inference gap); cast to the real fn
+    // signature since the data is already validated above.
+    const post = await createPost(
+      { ...parsed.data, authorId: req.userId } as Parameters<
+        typeof createPost
+      >[0]
+    );
     return sendApiSuccess(res, {
       status: 201,
       message: 'Post created successfully',
@@ -53,7 +60,10 @@ export const listPostsHandler = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const result = await listPosts(parsed.data);
+    const result = await listPosts(
+      parsed.data as Parameters<typeof listPosts>[0],
+      req.userId
+    );
     return sendApiSuccess(res, { data: result });
   } catch (error) {
     return sendApiError(res, { status: 500, message: 'Failed to list posts' });
@@ -62,7 +72,7 @@ export const listPostsHandler = async (req: AuthRequest, res: Response) => {
 
 export const getPostHandler = async (req: AuthRequest, res: Response) => {
   try {
-    const post = await findPostById(req.params.id);
+    const post = await findPostById(req.params.id, req.userId);
     if (!post) {
       return sendApiError(res, { status: 404, message: 'Post not found' });
     }
@@ -95,7 +105,10 @@ export const updatePostHandler = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const post = await updatePost(req.params.id, parsed.data);
+    const post = await updatePost(
+      req.params.id,
+      parsed.data as Parameters<typeof updatePost>[1]
+    );
     return sendApiSuccess(res, {
       message: 'Post updated successfully',
       data: { post },

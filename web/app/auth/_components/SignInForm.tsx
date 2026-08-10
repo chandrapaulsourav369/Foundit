@@ -53,12 +53,12 @@ export default function SignInForm() {
 	const redirectTo = searchParams.get("redirectTo") || "/";
 
 	return (
-		<section className='w-full max-w-120 rounded-[28px] border border-white/10 bg-[#1e2020]/90 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl md:p-10'>
+		<section className='w-full max-w-120 rounded-[28px] border border-border bg-card/90 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl md:p-10'>
 			<div className='text-center'>
-				<h1 className='text-3xl font-semibold tracking-tight text-white md:text-[32px] md:leading-10'>
+				<h1 className='text-3xl font-semibold tracking-tight text-foreground md:text-[32px] md:leading-10'>
 					Welcome Back
 				</h1>
-				<p className='mt-2 text-sm leading-6 text-[#c9c4d8]'>
+				<p className='mt-2 text-sm leading-6 text-muted-foreground'>
 					Sign in to continue your focused workspace.
 				</p>
 			</div>
@@ -81,7 +81,7 @@ export default function SignInForm() {
 				<input type='hidden' name='redirectTo' value={redirectTo} />
 
 				{state?.message ? (
-					<p className='rounded-2xl border border-[#ffb4ab]/20 bg-[#ffb4ab]/10 px-4 py-3 text-sm text-[#ffb4ab]'>
+					<p className='rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive'>
 						{state.message}
 					</p>
 				) : null}
@@ -107,7 +107,7 @@ export default function SignInForm() {
 					actionSlot={
 						<Link
 							href='/auth/forgot-pass'
-							className='text-[11px] text-[#928ea1] transition-colors hover:text-primary'
+							className='text-[11px] text-muted-foreground transition-colors hover:text-primary'
 						>
 							Forgot password?
 						</Link>
@@ -116,7 +116,7 @@ export default function SignInForm() {
 						<button
 							type='button'
 							onClick={() => setShowPassword((prev) => !prev)}
-							className='text-[#928ea1] transition-colors hover:text-white'
+							className='text-muted-foreground transition-colors hover:text-foreground'
 							aria-label={showPassword ? "Hide password" : "Show password"}
 						>
 							<svg
@@ -154,11 +154,11 @@ export default function SignInForm() {
 				</AuthSubmitButton>
 
 				<div className='flex items-center gap-4 py-2'>
-					<div className='h-px flex-1 bg-white/10' />
-					<span className='font-[Space_Grotesk] text-[11px] uppercase tracking-[0.18em] text-[#928ea1]'>
+					<div className='h-px flex-1 bg-border' />
+					<span className='font-[Space_Grotesk] text-[11px] uppercase tracking-[0.18em] text-muted-foreground'>
 						or
 					</span>
-					<div className='h-px flex-1 bg-white/10' />
+					<div className='h-px flex-1 bg-border' />
 				</div>
 
 				<AuthSocialButton
@@ -168,7 +168,7 @@ export default function SignInForm() {
 			</form>
 
 			<div className='mt-8 text-center'>
-				<p className='text-sm text-[#c9c4d8]'>
+				<p className='text-sm text-muted-foreground'>
 					Don&apos;t have an account?{" "}
 					<Link
 						href='/auth/signup'

@@ -7,6 +7,7 @@ type UserLike = {
   role?: string | null;
   avatarUrl?: string | null;
   userBodyImageUrl?: string | null;
+  bio?: string | null;
   age?: number | null;
   gender?: string | null;
   location?: string | null;
@@ -24,6 +25,7 @@ export function toPublicUser(user: UserLike): ReturnUserDto {
     avatar: user.avatarUrl || undefined,
     avatarUrl: user.avatarUrl || undefined,
     userBodyImageUrl: user.userBodyImageUrl || undefined,
+    bio: user.bio || undefined,
     age: user.age || undefined,
     gender: user.gender || undefined,
     location: user.location || undefined,

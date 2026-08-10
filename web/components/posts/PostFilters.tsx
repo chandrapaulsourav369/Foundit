@@ -7,6 +7,7 @@ export type PostFiltersValue = {
 	search: string;
 	category: string;
 	status: string;
+	resolved: string;
 };
 
 export default function PostFilters({
@@ -30,9 +31,9 @@ export default function PostFilters({
 				value={value.category}
 				onChange={e => onChange({ ...value, category: e.target.value })}
 			>
-				<option value=''>All categories</option>
+				<option value='' className='text-neutral-900'>All categories</option>
 				{POST_CATEGORIES.map(category => (
-					<option key={category} value={category}>
+					<option key={category} value={category} className='text-neutral-900'>
 						{category.replace("_", " ")}
 					</option>
 				))}
@@ -43,12 +44,22 @@ export default function PostFilters({
 				value={value.status}
 				onChange={e => onChange({ ...value, status: e.target.value })}
 			>
-				<option value=''>Lost &amp; Found</option>
+				<option value='' className='text-neutral-900'>Lost &amp; Found</option>
 				{POST_STATUSES.map(status => (
-					<option key={status} value={status}>
+					<option key={status} value={status} className='text-neutral-900'>
 						{status}
 					</option>
 				))}
+			</select>
+
+			<select
+				className='h-9 rounded-md border border-input bg-transparent px-3 text-sm'
+				value={value.resolved}
+				onChange={e => onChange({ ...value, resolved: e.target.value })}
+			>
+				<option value='' className='text-neutral-900'>Resolved &amp; unresolved</option>
+				<option value='false' className='text-neutral-900'>Unresolved only</option>
+				<option value='true' className='text-neutral-900'>Resolved only</option>
 			</select>
 		</div>
 	);

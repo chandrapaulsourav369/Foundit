@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
 import Header from "./../components/Header";
@@ -7,8 +6,6 @@ import Footer from "./../components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import MainProvider from "@/providers/Provider";
 import { getSession } from "@/lib/auth/session";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
 	title: "FoundIt — Lost & Found",
@@ -23,26 +20,16 @@ export default async function RootLayout({
 	const session = await getSession();
 
 	return (
-		<html lang='en' className='dark'>
-			{/* <head>
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
-        />
-      </head> */}
+		<html lang='en' suppressHydrationWarning>
 			<body
-				// className={
-				// 	inter.className +
-				// 	" bg-white text-black dark:bg-black dark:text-white dark overflow-x-hidden"
-				// }
+			// className={
+			// 	inter.className +
+			// 	"overflow-x-hidden min-h-screen"
+			// }
 			>
 				<MainProvider initialUser={session?.user ?? null}>
 					<Header />
-					<main className='pt-20'>{children}</main>
+					<main className='pt-20 min-h-screen'>{children}</main>
 					<Footer />
 					<MobileBottomNav />
 				</MainProvider>

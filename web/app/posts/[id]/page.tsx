@@ -2,12 +2,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { getPostAction } from "@/lib/posts/actions";
+import { listCommentsAction } from "@/lib/comments/actions";
 import PostActions from "@/components/posts/PostActions";
 import PostComments from "@/components/posts/PostComments";
+import MessageOwnerButton from "@/components/posts/MessageOwnerButton";
 import ReportDialog from "@/components/ReportDialog";
 import UserAvatar from "@/components/UserAvatar";
-import { Button } from "@/components/ui/button";
-import { getMockUser, mockComments } from "@/lib/mock-data";
 
 export default async function PostDetailPage({
 	params,
@@ -28,9 +28,14 @@ export default async function PostDetailPage({
 	const canManage =
 		session?.user &&
 		(session.user.id === post.authorId || session.user.role === "ADMIN");
-	const author = getMockUser(post.authorId);
 	const isOwner = session?.user?.id === post.authorId;
-	const postComments = mockComments.filter(c => c.postId === post.id);
+	const author = post.author;
+
+	const commentsResult = await listCommentsAction(post.id);
+	const initialComments =
+		commentsResult.success && commentsResult.data
+			? commentsResult.data.comments
+			: [];
 
 	return (
 		<main className='mx-auto max-w-2xl px-4 py-8'>
@@ -67,27 +72,31 @@ export default async function PostDetailPage({
 			<p className='mt-4 whitespace-pre-wrap text-sm'>{post.description}</p>
 
 			<div className='mt-6 flex items-center justify-between gap-2 rounded-lg border p-4'>
-				<Link
-					href={`/profile/${author.id}`}
-					className='flex items-center gap-3'
-				>
-					<UserAvatar
-						name={author.name}
-						avatarUrl={author.avatarUrl}
-						className='size-11'
-					/>
-					<div>
-						<p className='text-sm font-semibold'>{author.name}</p>
-						<p className='text-xs text-muted-foreground'>{author.location}</p>
-					</div>
-				</Link>
+				{author ? (
+					<Link
+						href={`/profile/${author.id}`}
+						className='flex items-center gap-3'
+					>
+						<UserAvatar
+							name={author.name}
+							avatarUrl={author.avatarUrl}
+							className='size-11'
+						/>
+						<div>
+							<p className='text-sm font-semibold'>{author.name}</p>
+							<p className='text-xs text-muted-foreground'>
+								{author.location}
+							</p>
+						</div>
+					</Link>
+				) : (
+					<div className='text-sm text-muted-foreground'>Unknown poster</div>
+				)}
 				<div className='flex gap-2'>
-					{!isOwner && (
-						<Button asChild size='sm'>
-							<Link href='/messages/conv1'>Message owner</Link>
-						</Button>
+					{!isOwner && session?.user && (
+						<MessageOwnerButton postId={post.id} />
 					)}
-					<ReportDialog targetLabel='this post' />
+					{!isOwner && <ReportDialog postId={post.id} targetLabel='this post' />}
 				</div>
 			</div>
 
@@ -98,7 +107,7 @@ export default async function PostDetailPage({
 			)}
 
 			<div className='mt-8 border-t pt-6'>
-				<PostComments postId={post.id} initialComments={postComments} />
+				<PostComments postId={post.id} initialComments={initialComments} />
 			</div>
 		</main>
 	);

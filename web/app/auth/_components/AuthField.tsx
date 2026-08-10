@@ -40,7 +40,7 @@ export function AuthField({
 			<div className='flex items-center justify-between gap-3'>
 				<Label
 					htmlFor={id}
-					className='font-[Space_Grotesk] text-[12px] font-semibold uppercase tracking-[0.1em] text-[#c9c4d8]'
+					className='font-[Space_Grotesk] text-[12px] font-semibold uppercase tracking-[0.1em] text-muted-foreground'
 				>
 					{label}
 				</Label>
@@ -48,7 +48,7 @@ export function AuthField({
 			</div>
 			<div className='relative'>
 				{leadingIcon ? (
-					<div className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#928ea1]'>
+					<div className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground'>
 						{leadingIcon}
 					</div>
 				) : null}
@@ -59,19 +59,19 @@ export function AuthField({
 					placeholder={placeholder}
 					autoComplete={autoComplete}
 					className={cn(
-						"h-12 rounded-2xl border border-white/10 bg-[#0d0d14] text-sm text-white shadow-none placeholder:text-[#928ea1]/60 transition-colors focus-visible:border-[#c9bfff] focus-visible:ring-[#c9bfff]/30",
+						"h-12 rounded-2xl border border-border bg-input text-sm text-foreground shadow-none placeholder:text-muted-foreground/60 transition-colors focus-visible:border-primary focus-visible:ring-primary/30",
 						hasLeadingIcon ? "pl-11" : "px-4",
 						trailingSlot ? "pr-12" : "pr-4",
 						inputClassName,
 					)}
 				/>
 				{trailingSlot ? (
-					<div className='absolute right-3 top-1/2 -translate-y-1/2 text-[#928ea1]'>
+					<div className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground'>
 						{trailingSlot}
 					</div>
 				) : null}
 			</div>
-			{error ? <p className='text-sm text-[#ffb4ab]'>{error}</p> : null}
+			{error ? <p className='text-sm text-destructive'>{error}</p> : null}
 		</div>
 	);
 }

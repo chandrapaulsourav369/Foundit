@@ -3,10 +3,9 @@ import { Post } from "./post";
 export type PublicUser = {
 	id: string;
 	name: string;
-	email: string;
 	avatarUrl: string | null;
-	bio: string;
-	location: string;
+	bio: string | null;
+	location: string | null;
 	joinedAt: string;
 	stats: {
 		posts: number;
@@ -15,10 +14,17 @@ export type PublicUser = {
 	};
 };
 
+export type CommentAuthor = {
+	id: string;
+	name: string;
+	avatarUrl: string | null;
+};
+
 export type Comment = {
 	id: string;
 	postId: string;
-	author: PublicUser;
+	authorId: string;
+	author: CommentAuthor | null;
 	body: string;
 	createdAt: string;
 };
@@ -28,39 +34,66 @@ export type Message = {
 	conversationId: string;
 	senderId: string;
 	body: string;
+	readBy: string[];
 	createdAt: string;
+};
+
+export type ConversationParticipant = {
+	id: string;
+	name: string;
+	avatarUrl: string | null;
 };
 
 export type Conversation = {
 	id: string;
-	participant: PublicUser;
-	postTitle: string;
-	lastMessage: string;
+	postId: string;
+	participants: string[];
+	participant: ConversationParticipant | null;
+	lastMessage: string | null;
 	lastMessageAt: string;
 	unreadCount: number;
-	messages: Message[];
 };
 
-export type NotificationType = "comment" | "message" | "report" | "admin";
+export type NotificationType =
+	| "NEW_COMMENT"
+	| "NEW_MESSAGE"
+	| "REPORT_UPDATE"
+	| "MODERATION";
 
 export type Notification = {
 	id: string;
 	type: NotificationType;
 	title: string;
 	body: string;
+	link: string | null;
+	isRead: boolean;
 	createdAt: string;
-	read: boolean;
 };
+
+export type ReportReason =
+	| "SPAM_DUPLICATE"
+	| "INAPPROPRIATE"
+	| "WRONG_CATEGORY"
+	| "SUSPECTED_SCAM"
+	| "OTHER";
+
+export const REPORT_REASONS: { value: ReportReason; label: string }[] = [
+	{ value: "SPAM_DUPLICATE", label: "Spam or duplicate" },
+	{ value: "INAPPROPRIATE", label: "Inappropriate content" },
+	{ value: "WRONG_CATEGORY", label: "Wrong category" },
+	{ value: "SUSPECTED_SCAM", label: "Suspected scam" },
+	{ value: "OTHER", label: "Other" },
+];
 
 export type ReportStatus = "PENDING" | "REVIEWING" | "RESOLVED" | "REJECTED";
 
 export type Report = {
 	id: string;
-	post: Pick<Post, "id" | "title" | "status">;
-	reason: string;
-	details: string;
+	postId: string;
+	reason: ReportReason;
+	details: string | null;
 	status: ReportStatus;
-	submittedAt: string;
+	createdAt: string;
 	adminResponse: string | null;
 };
 
@@ -70,8 +103,8 @@ export type AdminUserRow = {
 	email: string;
 	avatarUrl: string | null;
 	role: "USER" | "ADMIN";
-	status: "ACTIVE" | "BANNED";
-	joinedAt: string;
+	isActive: boolean;
+	createdAt: string;
 };
 
 export type AdminPostRow = Pick<
@@ -79,6 +112,7 @@ export type AdminPostRow = Pick<
 	"id" | "title" | "status" | "category" | "isResolved" | "createdAt"
 > & {
 	authorName: string;
+	deletedAt?: string | null;
 };
 
 export type ProfilePost = {
@@ -87,12 +121,5 @@ export type ProfilePost = {
 	status: Post["status"];
 	category: Post["category"];
 	isResolved: boolean;
-	imageUrl: string;
-};
-
-export type AdminStat = {
-	label: string;
-	value: string;
-	change: string;
-	trend: "up" | "down";
+	images: Post["images"];
 };

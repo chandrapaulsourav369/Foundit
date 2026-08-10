@@ -6,6 +6,10 @@ if (typeof window !== "undefined") {
 	gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
 
+export const prefersReducedMotion = () =>
+	typeof window !== "undefined" &&
+	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 //Init
 
 export * from "gsap";

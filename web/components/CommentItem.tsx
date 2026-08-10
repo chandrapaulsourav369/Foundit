@@ -1,29 +1,45 @@
+import { Trash2 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
+import { Button } from "@/components/ui/button";
+import { timeAgo } from "@/lib/timeAgo";
 import { Comment } from "@/types/social";
 
-function timeAgo(iso: string) {
-	const diffMs = Date.now() - new Date(iso).getTime();
-	const minutes = Math.max(1, Math.round(diffMs / 60000));
-	if (minutes < 60) return `${minutes}m ago`;
-	const hours = Math.round(minutes / 60);
-	if (hours < 24) return `${hours}h ago`;
-	return `${Math.round(hours / 24)}d ago`;
-}
+export default function CommentItem({
+	comment,
+	canDelete = false,
+	onDelete,
+}: {
+	comment: Comment;
+	canDelete?: boolean;
+	onDelete?: () => void;
+}) {
+	const authorName = comment.author?.name ?? "Deleted user";
 
-export default function CommentItem({ comment }: { comment: Comment }) {
 	return (
 		<div className='flex gap-3'>
 			<UserAvatar
-				name={comment.author.name}
-				avatarUrl={comment.author.avatarUrl}
+				name={authorName}
+				avatarUrl={comment.author?.avatarUrl ?? null}
 				className='size-9 shrink-0'
 			/>
 			<div className='flex-1 rounded-lg bg-muted/50 px-3 py-2'>
 				<div className='flex items-center justify-between gap-2'>
-					<span className='text-sm font-semibold'>{comment.author.name}</span>
-					<span className='text-xs text-muted-foreground'>
-						{timeAgo(comment.createdAt)}
-					</span>
+					<span className='text-sm font-semibold'>{authorName}</span>
+					<div className='flex items-center gap-2'>
+						<span className='text-xs text-muted-foreground'>
+							{timeAgo(comment.createdAt)}
+						</span>
+						{canDelete && (
+							<Button
+								variant='ghost'
+								size='icon-sm'
+								onClick={onDelete}
+								aria-label='Delete comment'
+							>
+								<Trash2 className='size-3.5' />
+							</Button>
+						)}
+					</div>
 				</div>
 				<p className='mt-1 text-sm text-foreground/90'>{comment.body}</p>
 			</div>
