@@ -166,3 +166,6 @@ export const deletePostHandler = async (req: AuthRequest, res: Response) => {
     return sendApiError(res, { status: 500, message: 'Failed to delete post' });
   }
 };
+
+
+//post control update
