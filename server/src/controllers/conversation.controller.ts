@@ -1,3 +1,14 @@
+/**
+ * Conversation Controller
+ * 
+ * Handles HTTP requests related to conversations and direct messaging between users including:
+ * - Creating new conversations
+ * - Listing user's conversations
+ * - Listing messages in a conversation
+ * - Sending messages
+ * - Marking conversations as read
+ */
+
 import { Response } from 'express';
 import { AuthRequest } from '#src/types/authRequest.js';
 import { sendApiError, sendApiSuccess } from '#src/utils/api-response.ts';
@@ -19,15 +30,27 @@ import { findPostById } from '#src/services/post.service.ts';
 import { createNotification } from '#src/services/notification.service.ts';
 import { NotificationType } from '#models/notification.model.ts';
 
+/**
+ * Create Conversation Handler
+ * 
+ * Initiates a new conversation between two users about a specific post
+ * Prevents users from messaging themselves about their own posts
+ * 
+ * @param req - Express request with authenticated user info and post ID in body
+ * @param res - Express response object
+ * @returns Newly created or existing conversation object
+ */
 export const createConversationHandler = async (
   req: AuthRequest,
   res: Response
 ) => {
   try {
+    // Verify user is authenticated
     if (!req.userId) {
       return sendApiError(res, { status: 401, message: 'Unauthorized' });
     }
 
+    // Validate request body against schema
     const parsed = CreateConversationSchema.safeParse(req.body);
     if (!parsed.success) {
       return sendApiError(res, {
@@ -37,10 +60,13 @@ export const createConversationHandler = async (
       });
     }
 
+    // Verify the post exists
     const post = await findPostById(parsed.data.postId);
     if (!post) {
       return sendApiError(res, { status: 404, message: 'Post not found' });
     }
+    
+    // Prevent users from messaging themselves
     if (post.authorId === req.userId) {
       return sendApiError(res, {
         status: 400,
@@ -48,6 +74,7 @@ export const createConversationHandler = async (
       });
     }
 
+    // Create new conversation or retrieve existing one between these two users
     const conversation = await findOrCreateConversation(
       post.id,
       req.userId,
@@ -65,11 +92,21 @@ export const createConversationHandler = async (
   }
 };
 
+/**
+ * List Conversations Handler
+ * 
+ * Retrieves all conversations for the authenticated user, sorted by most recent message
+ * 
+ * @param req - Express request with authenticated user info
+ * @param res - Express response object
+ * @returns Array of conversation objects with latest message info
+ */
 export const listConversationsHandler = async (
   req: AuthRequest,
   res: Response
 ) => {
   try {
+    // Fetch all conversations for the current user
     const conversations = await listConversationsForUser(req.userId as string);
     return sendApiSuccess(res, { data: { conversations } });
   } catch (error) {
@@ -80,16 +117,30 @@ export const listConversationsHandler = async (
   }
 };
 
+/**
+ * List Messages Handler
+ * 
+ * Retrieves all messages in a conversation with pagination support
+ * Only participants of the conversation can access its messages
+ * 
+ * @param req - Express request with authenticated user info, conversation ID in params, and pagination query
+ * @param res - Express response object
+ * @returns Paginated array of messages in the conversation
+ */
 export const listMessagesHandler = async (req: AuthRequest, res: Response) => {
   try {
+    // Verify the conversation exists
     const conversation = await getConversationById(req.params.id);
     if (!conversation) {
       return sendApiError(res, { status: 404, message: 'Conversation not found' });
     }
+    
+    // Verify user is a participant in this conversation
     if (!isParticipant(conversation, req.userId as string)) {
       return sendApiError(res, { status: 403, message: 'Forbidden' });
     }
 
+    // Validate query parameters for pagination
     const parsed = ListMessagesQuerySchema.safeParse(req.query);
     if (!parsed.success) {
       return sendApiError(res, {
@@ -99,6 +150,7 @@ export const listMessagesHandler = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Fetch messages with pagination
     const result = await listMessages(req.params.id, parsed.data);
     return sendApiSuccess(res, { data: result });
   } catch (error) {
@@ -106,16 +158,30 @@ export const listMessagesHandler = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * Create Message Handler
+ * 
+ * Sends a new message in a conversation and notifies the recipient
+ * Only conversation participants can send messages
+ * 
+ * @param req - Express request with authenticated user info, conversation ID, and message body
+ * @param res - Express response object
+ * @returns Newly created message object
+ */
 export const createMessageHandler = async (req: AuthRequest, res: Response) => {
   try {
+    // Verify the conversation exists
     const conversation = await getConversationById(req.params.id);
     if (!conversation) {
       return sendApiError(res, { status: 404, message: 'Conversation not found' });
     }
+    
+    // Verify user is a participant in this conversation
     if (!isParticipant(conversation, req.userId as string)) {
       return sendApiError(res, { status: 403, message: 'Forbidden' });
     }
 
+    // Validate message body against schema
     const parsed = CreateMessageSchema.safeParse(req.body);
     if (!parsed.success) {
       return sendApiError(res, {
@@ -125,12 +191,14 @@ export const createMessageHandler = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Create the message in database
     const message = await createMessage({
       conversationId: req.params.id,
       senderId: req.userId as string,
       body: parsed.data.body,
     });
 
+    // Notify the other participant about the new message
     const recipientId = conversation.participants.find(
       p => p !== req.userId
     );
@@ -150,19 +218,33 @@ export const createMessageHandler = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * Mark Conversation Read Handler
+ * 
+ * Marks a conversation as read for the current user, indicating they've viewed all messages
+ * Only conversation participants can mark it as read
+ * 
+ * @param req - Express request with authenticated user info and conversation ID in params
+ * @param res - Express response object
+ * @returns Success message
+ */
 export const markConversationReadHandler = async (
   req: AuthRequest,
   res: Response
 ) => {
   try {
+    // Verify the conversation exists
     const conversation = await getConversationById(req.params.id);
     if (!conversation) {
       return sendApiError(res, { status: 404, message: 'Conversation not found' });
     }
+    
+    // Verify user is a participant in this conversation
     if (!isParticipant(conversation, req.userId as string)) {
       return sendApiError(res, { status: 403, message: 'Forbidden' });
     }
 
+    // Mark conversation as read for the current user
     await markConversationRead(req.params.id, req.userId as string);
     return sendApiSuccess(res, { message: 'Conversation marked as read' });
   } catch (error) {
