@@ -61,3 +61,6 @@ export const listMyReportsHandler = async (req: AuthRequest, res: Response) => {
     return sendApiError(res, { status: 500, message: 'Failed to fetch reports' });
   }
 };
+
+
+//report control update
