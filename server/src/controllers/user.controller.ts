@@ -438,3 +438,6 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+
+//user controller update
